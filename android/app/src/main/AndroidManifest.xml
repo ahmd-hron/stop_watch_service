@@ -1,47 +1,60 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" >
+
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <application
-        android:label="test_native_notfications"
-        android:exported="false"
-
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:exported="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="test_native_notfications" >
         <service
-         android:name=".YourService"
-         android:stopWithTask="false" />
+            android:name=".NotificationService"
+            android:enabled="true"
+            android:foregroundServiceType="dataSync"
+            android:exported="false" >
+        </service>
+
 
         <activity
-        
             android:name=".MainActivity"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:exported="true"
+            android:hardwareAccelerated="true"
             android:launchMode="singleTop"
             android:theme="@style/LaunchTheme"
-            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
-            android:hardwareAccelerated="true"
-            android:windowSoftInputMode="adjustResize">
-            
+            android:windowSoftInputMode="adjustResize" >
             <meta-data
-              android:name="io.flutter.embedding.android.NormalTheme"
-              android:resource="@style/NormalTheme"
-              />
+                android:name="io.flutter.embedding.android.NormalTheme"
+                android:resource="@style/NormalTheme" />
+
             <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+
                 <action android:name="ACTION_STOP" />
                 <action android:name="ACTION_CANCEL" />
             </intent-filter>
-           
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:host="www.example.com"
+                    android:scheme="http" />
+            </intent-filter>
         </activity>
-      
+
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
 
-        <receiver android:name=".NotificationActionReceiver" />
         <receiver android:name=".CancelActionReceiver" />
         <receiver android:name=".StopActionReceiver" />
-
     </application>
+
 </manifest>

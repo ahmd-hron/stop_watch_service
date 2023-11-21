@@ -10,7 +10,7 @@ class CancelActionReceiver : BroadcastReceiver() {
         MainActivity.isRunning = false
         NotificationManagerCompat.from(context).cancel(1)
         val map = HashMap<String, Any>()
-        map["action"] = "com.example.test_native_notfications.CancelActionReceiver triggered"
+        map["action"] = "CancelActionReceiver"
         // Add more key-value pairs to the map as needed
         MainActivity.eventSink?.success(map)
     }

@@ -1,7 +1,7 @@
 package com.example.test_native_notfications
-import AppNotificationManager
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
 import androidx.annotation.NonNull
@@ -12,11 +12,25 @@ import io.flutter.plugin.common.EventChannel
 
 class MainActivity:FlutterActivity(), EventChannel.StreamHandler {
     private val CHANNEL = "com.example.app/notification"
+    private val notificationService = NotificationService(this)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
         wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "MyApp::MyWakeLockTag")
+        notificationService.createNotificationChannel()
+        logId = intent.getStringExtra("logId")
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        if (logId != null) {
+            val map:HashMap<String, Any> =HashMap<String,Any>()
+            map["action"] = "Notification tapped"
+            map["logId"]= logId!!
+            eventSink?.success(map)
+        }
     }
 
     companion object {
@@ -24,11 +38,11 @@ class MainActivity:FlutterActivity(), EventChannel.StreamHandler {
         var isRunning = true
         var seconds = 0
         var startTime = 0L
-        var logId=""
+        var logId: String? = null
         var wakeLock: PowerManager.WakeLock? = null
     }
 
-    private val notificationManager = AppNotificationManager(this)
+
 
     override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -43,13 +57,15 @@ class MainActivity:FlutterActivity(), EventChannel.StreamHandler {
                 val bodyText = call.argument<String>("bodyText")
                 logId = call.argument<String>("logId")!!
                 isRunning = true
-                notificationManager.showNotification(bodyText!!)
+                notificationService.showNotification(bodyText!!)
                 result.success("Notification shown")
                 }
                 "cancelNotification" -> {
                     val intent = Intent(this, StopActionReceiver::class.java)
                     sendBroadcast(intent)
                     result.success("Notification cancelled")
+                    notificationService.stopSelf()
+                    wakeLock?.release()
                 }
                 else -> result.notImplemented()
             }
