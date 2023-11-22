@@ -13,13 +13,21 @@ import android.os.Looper
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 
-class NotificationService (private val context: Context) : Service() {
+class NotificationService  : Service() {
 
     val channelId = "com.example.app"
     val channelName = "Example Channel"
-    var started=false
+
+    override fun onCreate() {
+        super.onCreate()
+        createNotificationChannel()
+    }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        when(intent?.action){
+            Actions.START.toString()-> showNotification(intent?.getStringExtra("bodyText")!!)
+            Actions.STOP.toString()-> stopSelf()
+        }
         return START_STICKY
     }
 
@@ -28,31 +36,28 @@ class NotificationService (private val context: Context) : Service() {
     }
 
     fun startForegroundService(notification: Notification, id :Any){
-//        if(!started){
-//            startForeground(1, notification)
-//            started=true
-//        }
+            startForeground(1, notification)
     }
 
     fun createPendingIntent(receiver: Class<*>, requestCode: Int): PendingIntent {
-        val intent = Intent(context, receiver)
+        val intent = Intent(this, receiver)
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            PendingIntent.getBroadcast(context, requestCode, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+            PendingIntent.getBroadcast(this, requestCode, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         } else {
-            PendingIntent.getBroadcast(context, requestCode, intent, PendingIntent.FLAG_UPDATE_CURRENT)
+            PendingIntent.getBroadcast(this, requestCode, intent, PendingIntent.FLAG_UPDATE_CURRENT)
         }
     }
 
     fun createActivityPendingIntent(receiver: Class<*>, requestCode: Int): PendingIntent {
-        val intent = Intent(context, receiver)
+        val intent = Intent(this, receiver)
         MainActivity.eventSink?.success("adding this log id ${MainActivity.logId}")
         intent.putExtra("notification_tapped", MainActivity.logId)
         intent.putExtra("logId", MainActivity.logId)
         intent.putExtra("opened_from_notification", true)
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            PendingIntent.getActivity(context, requestCode, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+            PendingIntent.getActivity(this, requestCode, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         } else {
-            PendingIntent.getActivity(context, requestCode, intent, PendingIntent.FLAG_UPDATE_CURRENT)
+            PendingIntent.getActivity(this, requestCode, intent, PendingIntent.FLAG_UPDATE_CURRENT)
         }
     }
 
@@ -61,7 +66,7 @@ class NotificationService (private val context: Context) : Service() {
 
     fun createNotificationBuilder( mainActivityPendingIntent: PendingIntent, cancelPendingIntent: PendingIntent, stopPendingIntent: PendingIntent, bodyText: String): NotificationCompat.Builder {
 
-        return NotificationCompat.Builder(context, channelId)
+        return NotificationCompat.Builder(this, channelId)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle("Stopwatch Notification").setOngoing(true)
             .setContentText("Stopwatch is running.").setContentIntent(mainActivityPendingIntent)
@@ -76,7 +81,7 @@ class NotificationService (private val context: Context) : Service() {
             val importance = NotificationManager.IMPORTANCE_DEFAULT
             val channel = NotificationChannel(channelId, channelName, importance)
             val notificationManager: NotificationManager =
-                context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                this.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             notificationManager.createNotificationChannel(channel)
         }
     }
@@ -88,7 +93,7 @@ class NotificationService (private val context: Context) : Service() {
         val mainActivityPendingIntent = createActivityPendingIntent(MainActivity::class.java, 2)
 
         var builder = createNotificationBuilder( mainActivityPendingIntent, cancelPendingIntent, stopPendingIntent,bodyText)
-        with(NotificationManagerCompat.from(context)) {
+        with(NotificationManagerCompat.from(this)) {
             notify(1, builder.build())
         }
 
@@ -97,6 +102,7 @@ class NotificationService (private val context: Context) : Service() {
     }
 
     private fun startStopwatch(channelId: String, mainActivityPendingIntent: PendingIntent, cancelPendingIntent: PendingIntent, stopPendingIntent: PendingIntent, bodyText: String) {
+        val outerClassThis = this
         val handler = Handler(Looper.getMainLooper())
         val runnable = object : Runnable {
             override fun run() {
@@ -110,7 +116,7 @@ class NotificationService (private val context: Context) : Service() {
                     .setContentText(bodyText+time)
                     .build()
                 startForegroundService(notification,1)
-                val notificationManagerCompat = NotificationManagerCompat.from(context)
+                val notificationManagerCompat = NotificationManagerCompat.from(outerClassThis)
                 notificationManagerCompat.notify(1, notification)
 
                 if (MainActivity.startTime == 0L) {
@@ -127,7 +133,12 @@ class NotificationService (private val context: Context) : Service() {
     }
 
 
+
     fun calculateSeconds(): Int {
         return ((System.currentTimeMillis() - MainActivity.startTime) / 1000).toInt()
+    }
+
+    enum class Actions{
+        START, STOP
     }
 }

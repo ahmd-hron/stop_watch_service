@@ -12,13 +12,12 @@ import io.flutter.plugin.common.EventChannel
 
 class MainActivity:FlutterActivity(), EventChannel.StreamHandler {
     private val CHANNEL = "com.example.app/notification"
-    private val notificationService = NotificationService(this)
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
         wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "MyApp::MyWakeLockTag")
-        notificationService.createNotificationChannel()
         logId = intent.getStringExtra("logId")
     }
 
@@ -57,19 +56,33 @@ class MainActivity:FlutterActivity(), EventChannel.StreamHandler {
                 val bodyText = call.argument<String>("bodyText")
                 logId = call.argument<String>("logId")!!
                 isRunning = true
-                notificationService.showNotification(bodyText!!)
+                Intent(applicationContext,NotificationService::class.java).also {
+                    it.action=NotificationService.Actions.START.toString()
+                    it.putExtra("bodyText",bodyText)
+                    startService(it)
+                }
+//                notificationService.showNotification(bodyText!!)
                 result.success("Notification shown")
                 }
                 "cancelNotification" -> {
-                    val intent = Intent(this, StopActionReceiver::class.java)
-                    sendBroadcast(intent)
                     result.success("Notification cancelled")
-                    notificationService.stopSelf()
-                    wakeLock?.release()
+                    stopService()
                 }
                 else -> result.notImplemented()
             }
         }
+    }
+
+    private fun stopService(){
+        // calls stop action
+        val intent = Intent(this, StopActionReceiver::class.java)
+        sendBroadcast(intent)
+        // stop service
+        Intent(applicationContext,NotificationService::class.java).also {
+            it.action=NotificationService.Actions.STOP.toString()
+            startService(it)
+        }
+        wakeLock?.release()
     }
 
     

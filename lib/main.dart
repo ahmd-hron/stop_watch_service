@@ -16,13 +16,15 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+  // method channel should be match as in kotlin and swift 
   final String methodChannel = 'com.example.app/notification';
+  // event channel should be matched with kotlin and swift
   static const eventChannel = EventChannel('com.example.app/receiver');
 
   @override
   void initState() {
     print('rebuilt app');
-    initUniLinks();
+    // initUniLinks();
     eventChannel.receiveBroadcastStream().listen(_onEvent, onError: _onError);
     super.initState();
   }

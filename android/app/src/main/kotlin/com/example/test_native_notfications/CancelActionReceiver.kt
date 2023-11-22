@@ -11,7 +11,12 @@ class CancelActionReceiver : BroadcastReceiver() {
         NotificationManagerCompat.from(context).cancel(1)
         val map = HashMap<String, Any>()
         map["action"] = "CancelActionReceiver"
-        // Add more key-value pairs to the map as needed
+        Intent(context,NotificationService::class.java).also {
+            it.action=NotificationService.Actions.STOP.toString()
+            context.startService(it)
+        }
         MainActivity.eventSink?.success(map)
+        MainActivity.startTime=0L
+        MainActivity.wakeLock?.release()
     }
 }
